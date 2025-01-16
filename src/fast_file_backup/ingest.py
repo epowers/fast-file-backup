@@ -16,13 +16,15 @@ def arg_isdir(arg):
     else:
         raise argparse.ArgumentTypeError(f"directory: {arg} is not a valid directory")
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('directory', nargs='+', type=arg_isdir)
     parser.add_argument('-db', '--database', type=pathlib.Path, default='index.db')
     parser.add_argument('-q', '--query', action='store_true')
+    parser.add_argument('-v', '--verbose', action='store_true')
     args = parser.parse_args()
     query = args.query
+    verbose = args.verbose
     paths = args.directory
     db_path = args.database
     BUFFER_SIZE = 2**24 # max(2**24, psutil.virtual_memory().free // 8)
@@ -99,11 +101,14 @@ if __name__ == '__main__':
     # create table
     cur.execute("""CREATE TABLE IF NOT EXISTS DirEnt ({})""".format(
         ", ".join(" ".join(e) for e in DIRENT_TABLE_SCHEMA)))
+    cur.execute("""CREATE UNIQUE INDEX IF NOT EXISTS DirEnt_path_idx ON DirEnt (path)""")
     con.commit()
 
     # add directory paths from command line
     data = []
     for path in paths:
+        if verbose:
+            print(f"Adding path: {path}")
         append_path_to_data(path, gd.DT_DIR, data)
     execute_data(data)
 
@@ -122,6 +127,11 @@ if __name__ == '__main__':
         if type_ == gd.DT_DIR:
             for inode, type_, name in gd.getdents(path, BUFFER_SIZE):
                 name = os.path.join(path, name)
+                if verbose:
+                    print(f"Adding path: {name}")
                 append_path_to_data(name, type_, data)
 
         execute_data(data)
+
+if __name__ == '__main__':
+    main()

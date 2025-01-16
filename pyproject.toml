@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fast-file-backup"
+version = "0.0.1"
+description = "Backup files with deduplication from source folders to a destination folder."
+requires-python = ">=3.9"
+dependencies = [
+    "getdents",
+    #"psutil",
+    ]
+
+[project.scripts]
+fast-file-backup-ingest = "fast_file_backup.ingest:main"
