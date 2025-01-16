@@ -105,6 +105,7 @@ def main():
     cur.execute("""CREATE TABLE IF NOT EXISTS DirEnt ({})""".format(
         ", ".join(" ".join(e) for e in DIRENT_TABLE_SCHEMA)))
     cur.execute("""CREATE UNIQUE INDEX IF NOT EXISTS DirEnt_path_idx ON DirEnt (path)""")
+    cur.execute("""CREATE INDEX IF NOT EXISTS DirEnt_size_idx ON DirEnt (size)""")
     con.commit()
 
     # add directory paths from command line
