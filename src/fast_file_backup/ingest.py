@@ -18,7 +18,7 @@ def arg_isdir(arg):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('directory', nargs='+', type=arg_isdir)
+    parser.add_argument('directory', nargs='*', type=arg_isdir)
     parser.add_argument('-db', '--database', type=pathlib.Path, default='index.db')
     parser.add_argument('-q', '--query', action='store_true')
     parser.add_argument('-v', '--verbose', action='store_true')
@@ -54,6 +54,8 @@ def main():
     if query and not os.path.isfile(db_path):
         parser.error(f"database: {db_path} is not a valid database")
         sys.exit(1)
+    if not paths:
+        paths = [os.getcwd()]
 
     con = sql.connect(db_path)
     cur = con.cursor()
@@ -91,8 +93,9 @@ def main():
             ))
 
     def execute_data(data):
+        cur.executemany("""INSERT OR IGNORE INTO DirEnt (path) VALUES (?)""",
+                [row[:1] for row in data])
         for row in data:
-            cur.executemany("""INSERT OR IGNORE INTO DirEnt (path) VALUES (?)""", [row[:1]])
             cur.executemany("""UPDATE DirEnt SET {} WHERE path=?""".format(
                 ",".join(["{}=?".format(e[0]) for e in DIRENT_TABLE_SCHEMA[2:]])),
                 [row[1:] + row[:1]])
