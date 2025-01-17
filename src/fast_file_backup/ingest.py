@@ -61,7 +61,7 @@ def main():
     cur = con.cursor()
 
     if query:
-        for row in cur.execute("""SELECT path, type FROM DirEnt ORDER BY path LIMIT 100000"""):
+        for row in cur.execute("""SELECT path, type FROM DirEnt ORDER BY path"""):
             path, type_ = row
             print("{}{}".format(path, '/' if type_ == gd.DT_DIR else ''))
         sys.exit(0)
