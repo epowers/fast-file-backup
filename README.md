@@ -20,4 +20,5 @@ and fast directory and file stats.
 ## Use
 
     fast-file-backup-ingest .
-    fast-file-backup-ingest -q
+    fast-file-backup-query
+    fast-file-backup-query -p 'Pictures' -t 'image/'

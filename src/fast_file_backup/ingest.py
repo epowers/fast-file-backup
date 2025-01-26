@@ -20,10 +20,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('directory', nargs='*', type=arg_isdir)
     parser.add_argument('-db', '--database', type=pathlib.Path, default='index.db')
-    parser.add_argument('-q', '--query', action='store_true')
     parser.add_argument('-v', '--verbose', action='store_true')
     args = parser.parse_args()
-    query = args.query
     verbose = args.verbose
     paths = args.directory
     db_path = args.database
@@ -51,20 +49,11 @@ def main():
         #('flags', 'INTEGER'),
         )
 
-    if query and not os.path.isfile(db_path):
-        parser.error(f"database: {db_path} is not a valid database")
-        sys.exit(1)
     if not paths:
         paths = [os.getcwd()]
 
     con = sql.connect(db_path)
     cur = con.cursor()
-
-    if query:
-        for row in cur.execute("""SELECT path, type FROM DirEnt ORDER BY path"""):
-            path, type_ = row
-            print("{}{}".format(path, '/' if type_ == gd.DT_DIR else ''))
-        sys.exit(0)
 
     def append_path_to_data(path, type_, data):
         try:
