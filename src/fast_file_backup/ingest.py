@@ -16,6 +16,63 @@ def arg_isdir(arg):
     else:
         raise argparse.ArgumentTypeError(f"directory: {arg} is not a valid directory")
 
+def append_path_to_data(path, type_, data):
+    try:
+        stat = os.lstat(path)
+    except FileNotFoundError as e:
+        return
+    data.append((
+        path,
+        type_,
+        stat.st_ino, # inode
+        stat.st_mode,
+        stat.st_dev,
+        stat.st_nlink,
+        stat.st_uid,
+        stat.st_gid,
+        stat.st_size,
+        stat.st_atime,
+        stat.st_mtime,
+        stat.st_ctime,
+        stat.st_atime_ns,
+        stat.st_mtime_ns,
+        stat.st_ctime_ns,
+        stat.st_blocks,
+        stat.st_rdev,
+        #stat.st_flags,
+        ))
+
+DIRENT_TABLE_SCHEMA = (
+    ('id', 'INTEGER PRIMARY KEY'),
+    ('path', 'TEXT NOT NULL UNIQUE'),
+    ('type', 'INTEGER'),
+    ('inode', 'INTEGER'),
+    ('mode', 'INTEGER'),
+    ('dev', 'INTEGER'),
+    ('nlink', 'INTEGER'),
+    ('uid', 'INTEGER'),
+    ('gid', 'INTEGER'),
+    ('size', 'INTEGER'),
+    ('atime', 'INTEGER'),
+    ('mtime', 'INTEGER'),
+    ('ctime', 'INTEGER'),
+    ('atime_ns', 'INTEGER'),
+    ('mtime_ns', 'INTEGER'),
+    ('ctime_ns', 'INTEGER'),
+    ('blocks', 'INTEGER'),
+    ('rdev', 'INTEGER'),
+    #('flags', 'INTEGER'),
+    )
+
+def execute_data(con, cur, data):
+    cur.executemany("""INSERT OR IGNORE INTO DirEnt (path) VALUES (?)""",
+            [row[:1] for row in data])
+    for row in data:
+        cur.executemany("""UPDATE DirEnt SET {} WHERE path=?""".format(
+            ",".join(["{}=?".format(e[0]) for e in DIRENT_TABLE_SCHEMA[2:]])),
+            [row[1:] + row[:1]])
+    con.commit()
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('directory', nargs='*', type=arg_isdir)
@@ -27,68 +84,11 @@ def main():
     db_path = args.database
     BUFFER_SIZE = 2**24 # max(2**24, psutil.virtual_memory().free // 8)
 
-    DIRENT_TABLE_SCHEMA = (
-        ('id', 'INTEGER PRIMARY KEY'),
-        ('path', 'TEXT NOT NULL UNIQUE'),
-        ('type', 'INTEGER'),
-        ('inode', 'INTEGER'),
-        ('mode', 'INTEGER'),
-        ('dev', 'INTEGER'),
-        ('nlink', 'INTEGER'),
-        ('uid', 'INTEGER'),
-        ('gid', 'INTEGER'),
-        ('size', 'INTEGER'),
-        ('atime', 'INTEGER'),
-        ('mtime', 'INTEGER'),
-        ('ctime', 'INTEGER'),
-        ('atime_ns', 'INTEGER'),
-        ('mtime_ns', 'INTEGER'),
-        ('ctime_ns', 'INTEGER'),
-        ('blocks', 'INTEGER'),
-        ('rdev', 'INTEGER'),
-        #('flags', 'INTEGER'),
-        )
-
     if not paths:
         paths = [os.getcwd()]
 
     con = sql.connect(db_path)
     cur = con.cursor()
-
-    def append_path_to_data(path, type_, data):
-        try:
-            stat = os.lstat(path)
-        except FileNotFoundError as e:
-            return
-        data.append((
-            path,
-            type_,
-            stat.st_ino, # inode
-            stat.st_mode,
-            stat.st_dev,
-            stat.st_nlink,
-            stat.st_uid,
-            stat.st_gid,
-            stat.st_size,
-            stat.st_atime,
-            stat.st_mtime,
-            stat.st_ctime,
-            stat.st_atime_ns,
-            stat.st_mtime_ns,
-            stat.st_ctime_ns,
-            stat.st_blocks,
-            stat.st_rdev,
-            #stat.st_flags,
-            ))
-
-    def execute_data(data):
-        cur.executemany("""INSERT OR IGNORE INTO DirEnt (path) VALUES (?)""",
-                [row[:1] for row in data])
-        for row in data:
-            cur.executemany("""UPDATE DirEnt SET {} WHERE path=?""".format(
-                ",".join(["{}=?".format(e[0]) for e in DIRENT_TABLE_SCHEMA[2:]])),
-                [row[1:] + row[:1]])
-        con.commit()
 
     # create table
     cur.execute("""CREATE TABLE IF NOT EXISTS DirEnt ({})""".format(
@@ -103,7 +103,7 @@ def main():
         if verbose:
             print(f"Adding path: {path}")
         append_path_to_data(path, gd.DT_DIR, data)
-    execute_data(data)
+    execute_data(con, cur, data)
 
     # recursively search paths updating the database
     current_id = -1
@@ -124,7 +124,7 @@ def main():
                     print(f"Adding path: {name}")
                 append_path_to_data(name, type_, data)
 
-        execute_data(data)
+        execute_data(con, cur, data)
 
 if __name__ == '__main__':
     main()
