@@ -16,12 +16,10 @@ def main():
     parser.add_argument('-p', '--filter-path', type=str)
     parser.add_argument('-t', '--filter-type', type=str)
     parser.add_argument('-db', '--database', type=pathlib.Path, default='index.db')
-    parser.add_argument('-q', '--query', action='store_true')
     parser.add_argument('-v', '--verbose', action='store_true')
     args = parser.parse_args()
     filter_path = args.filter_path
     filter_type = args.filter_type
-    query = args.query
     verbose = args.verbose
     db_path = args.database
 
@@ -35,15 +33,15 @@ def main():
     if filter_path:
         filter_path = '%{}%'.format(filter_path)
         query = """SELECT path, type, size, blocks FROM DirEnt WHERE path LIKE ? ORDER BY path"""
-        resultset = cur.execute(query, [filter_path])
+        res = cur.execute(query, [filter_path])
     else:
         query = """SELECT path, type, size, blocks FROM DirEnt ORDER BY path"""
-        resultset = cur.execute(query)
+        res = cur.execute(query)
 
     totalsize = 0
     totalblocks = 0
     mimetypes_count = {}
-    for row in resultset:
+    for row in res:
         path, type_, size_, blocks = row
         if type_ == gd.DT_REG:
             mimetype_, _ = mimetypes.guess_type(path)

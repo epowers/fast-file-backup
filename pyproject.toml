@@ -15,3 +15,4 @@ dependencies = [
 [project.scripts]
 fast-file-backup-ingest = "fast_file_backup.ingest:main"
 fast-file-backup-query = "fast_file_backup.query:main"
+fast-file-backup-remove = "fast_file_backup.remove:main"
