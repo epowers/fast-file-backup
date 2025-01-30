@@ -61,7 +61,7 @@ def main():
                         'count': 1,
                         'size': size_,
                         }
-        elif type_ == gd.DT_DIR:
+        elif type_ == gd.DT_DIR and not filter_type:
             pass
         else:
             continue

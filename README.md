@@ -15,7 +15,7 @@ and fast directory and file stats.
     source .venv/bin/activate
     python -m build
     deactivate
-    pip install --force-reinstall dist/fast_file_backup-0.0.1-py3-none-any.whl
+    pip install --break-system-packages --force-reinstall dist/fast_file_backup-0.0.1-py3-none-any.whl
 
 ## Use
 
